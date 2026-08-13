@@ -1,3 +1,5 @@
+"use client"
+
 import { siteConfig } from "@/app/siteConfig"
 import { Button } from "@/components/Button"
 import {
@@ -10,6 +12,9 @@ import {
   DrawerTrigger,
 } from "@/components/Drawer"
 import { cx, focusRing } from "@/lib/utils"
+import { removeAuthToken } from "@/lib/api"
+import { useRouter } from "next/navigation"
+import { ThemeToggle } from "@/components/ThemeToggle"
 
 import {
   BarChartBig,
@@ -21,10 +26,12 @@ import {
   HelpCircle,
   Users,
   Sparkles,
+  ShieldCheck,
   LayoutGrid,
   FileText,
   Settings,
   Menu,
+  LogOut,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -38,7 +45,8 @@ const navigation = [
   { name: "Video Courses", href: siteConfig.baseLinks.videoCourses, icon: Video },
   { name: "FAQ", href: siteConfig.baseLinks.faqs, icon: HelpCircle },
   { name: "Komunitas", href: siteConfig.baseLinks.communities, icon: Users },
-  { name: "Keunggulan (USP)", href: siteConfig.baseLinks.usps, icon: Sparkles },
+  { name: "Fitur & Keunggulan", href: siteConfig.baseLinks.features, icon: Sparkles },
+  { name: "Kelola Admin / User", href: siteConfig.baseLinks.users, icon: ShieldCheck },
   { name: "Footer Links", href: siteConfig.baseLinks.footer, icon: LayoutGrid },
   { name: "Halaman Statis", href: siteConfig.baseLinks.pages, icon: FileText },
   { name: "Pengaturan Situs", href: siteConfig.baseLinks.siteSettings, icon: Settings },
@@ -46,10 +54,21 @@ const navigation = [
 
 export default function MobileSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+
   const isActive = (itemHref: string) => {
     if (itemHref === "/") return pathname === "/"
     return pathname.startsWith(itemHref)
   }
+
+  const handleLogout = () => {
+    removeAuthToken()
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user")
+    }
+    router.replace("/login")
+  }
+
   return (
     <>
       <Drawer>
@@ -64,12 +83,19 @@ export default function MobileSidebar() {
         </DrawerTrigger>
         <DrawerContent className="sm:max-w-lg">
           <DrawerHeader>
-            <DrawerTitle>JariBakat CMS</DrawerTitle>
+            <DrawerTitle className="flex items-center gap-2">
+              <img
+                src="/image.png"
+                alt="JariBakat Mascot Logo"
+                className="w-6 h-6 object-contain"
+              />
+              <span>JariBakat CMS</span>
+            </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
             <nav
               aria-label="core mobile navigation links"
-              className="flex flex-1 flex-col space-y-10"
+              className="flex flex-1 flex-col space-y-8"
             >
               <div>
                 <span
@@ -87,7 +113,7 @@ export default function MobileSidebar() {
                           href={item.href}
                           className={cx(
                             isActive(item.href)
-                              ? "text-blue-600 dark:text-blue-500 font-semibold"
+                              ? "text-[#1E1B4B] dark:text-blue-500 font-semibold"
                               : "text-gray-600 hover:text-[#0F172A] dark:text-gray-400 hover:dark:text-gray-50",
                             "flex items-center gap-x-2.5 rounded-md px-2 py-1.5 text-base font-medium transition hover:bg-gray-100 sm:text-sm hover:dark:bg-gray-900",
                             focusRing,
@@ -103,6 +129,19 @@ export default function MobileSidebar() {
                     </li>
                   ))}
                 </ul>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                <ThemeToggle />
+                <DrawerClose asChild>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-x-2.5 rounded-md px-2 py-2 text-base font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="size-5 shrink-0 text-red-600" />
+                    <span>Keluar Admin</span>
+                  </button>
+                </DrawerClose>
               </div>
             </nav>
           </DrawerBody>

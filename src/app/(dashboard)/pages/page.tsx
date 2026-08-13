@@ -8,6 +8,7 @@ import { Badge } from "@/components/Badge"
 import { Textarea } from "@/components/Textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/Table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/Dialog"
+import { TableSkeleton } from "@/components/TableSkeleton"
 import { Edit, Upload } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { fetchApi, uploadFileApi } from "@/lib/api"
@@ -131,11 +132,7 @@ export default function StaticPagesCMSPage() {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-sm text-gray-500">
-                  Memuat halaman statis...
-                </TableCell>
-              </TableRow>
+              <TableSkeleton columns={5} />
             ) : pages.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-sm text-gray-500">

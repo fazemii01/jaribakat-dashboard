@@ -10,24 +10,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } fro
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/Dialog"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { TableSkeleton } from "@/components/TableSkeleton"
-import { Plus, Edit, Trash2 } from "lucide-react"
+import { Plus, Edit, Trash2, Sparkles } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { fetchApi } from "@/lib/api"
 
-interface FAQItem {
+interface FeatureItem {
   id: string
-  category: string
-  question: string
-  answer: string
+  title: string
+  description: string
   sortOrder: number
   isActive: boolean
 }
 
-export default function FAQsCMSPage() {
-  const [faqs, setFaqs] = useState<FAQItem[]>([])
+export default function FeaturesCMSPage() {
+  const [features, setFeatures] = useState<FeatureItem[]>([])
   const [loading, setLoading] = useState(true)
   const [openModal, setOpenModal] = useState(false)
-  const [editingItem, setEditingItem] = useState<FAQItem | null>(null)
+  const [editingItem, setEditingItem] = useState<FeatureItem | null>(null)
 
   // Confirm delete modal states
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -35,17 +34,16 @@ export default function FAQsCMSPage() {
   const [deleting, setDeleting] = useState(false)
 
   const [form, setForm] = useState({
-    category: "Umum",
-    question: "",
-    answer: "",
+    title: "",
+    description: "",
     sortOrder: 0,
     isActive: true,
   })
 
-  const loadFaqs = async () => {
+  const loadFeatures = async () => {
     try {
-      const data = await fetchApi("/faqs")
-      setFaqs(Array.isArray(data) ? data : [])
+      const data = await fetchApi("/usps")
+      setFeatures(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -54,40 +52,38 @@ export default function FAQsCMSPage() {
   }
 
   useEffect(() => {
-    loadFaqs()
+    loadFeatures()
   }, [])
 
   const handleOpenCreate = () => {
     setEditingItem(null)
     setForm({
-      category: "Umum",
-      question: "",
-      answer: "",
-      sortOrder: faqs.length,
+      title: "",
+      description: "",
+      sortOrder: features.length,
       isActive: true,
     })
     setOpenModal(true)
   }
 
-  const handleOpenEdit = (item: FAQItem) => {
+  const handleOpenEdit = (item: FeatureItem) => {
     setEditingItem(item)
     setForm({
-      category: item.category,
-      question: item.question,
-      answer: item.answer,
+      title: item.title,
+      description: item.description,
       sortOrder: item.sortOrder,
       isActive: item.isActive,
     })
     setOpenModal(true)
   }
 
-  const handleToggleStatus = async (item: FAQItem) => {
+  const handleToggleStatus = async (item: FeatureItem) => {
     try {
-      await fetchApi(`/faqs/${item.id}`, {
+      await fetchApi(`/usps/${item.id}`, {
         method: "PUT",
         body: JSON.stringify({ ...item, isActive: !item.isActive }),
       })
-      loadFaqs()
+      loadFeatures()
     } catch (err) {
       console.error(err)
     }
@@ -97,18 +93,18 @@ export default function FAQsCMSPage() {
     e.preventDefault()
     try {
       if (editingItem) {
-        await fetchApi(`/faqs/${editingItem.id}`, {
+        await fetchApi(`/usps/${editingItem.id}`, {
           method: "PUT",
           body: JSON.stringify(form),
         })
       } else {
-        await fetchApi("/faqs", {
+        await fetchApi("/usps", {
           method: "POST",
           body: JSON.stringify(form),
         })
       }
       setOpenModal(false)
-      loadFaqs()
+      loadFeatures()
     } catch (err: any) {
       console.error(err)
     }
@@ -123,8 +119,8 @@ export default function FAQsCMSPage() {
     if (!deleteId) return
     setDeleting(true)
     try {
-      await fetchApi(`/faqs/${deleteId}`, { method: "DELETE" })
-      await loadFaqs()
+      await fetchApi(`/usps/${deleteId}`, { method: "DELETE" })
+      await loadFeatures()
     } catch (err: any) {
       console.error(err)
     } finally {
@@ -138,16 +134,17 @@ export default function FAQsCMSPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-50">
-            Kelola FAQ Pusat Bantuan
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-50 flex items-center gap-2">
+            <Sparkles className="size-6 text-amber-500" />
+            <span>Kelola Fitur &amp; Keunggulan Utama (Features)</span>
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-            Daftar pertanyaan umum dan jawaban untuk halaman FAQ
+            Kelola daftar fitur unggulan, kelebihan tes bakat, dan nilai tambah yang tampil di landing page
           </p>
         </div>
         <Button onClick={handleOpenCreate} className="gap-2 w-full sm:w-auto justify-center cursor-pointer">
           <Plus className="size-4" />
-          <span>Tambah FAQ</span>
+          <span>Tambah Fitur</span>
         </Button>
       </div>
 
@@ -155,9 +152,9 @@ export default function FAQsCMSPage() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableHeaderCell>Kategori</TableHeaderCell>
-              <TableHeaderCell>Pertanyaan</TableHeaderCell>
-              <TableHeaderCell>Jawaban</TableHeaderCell>
+              <TableHeaderCell>No</TableHeaderCell>
+              <TableHeaderCell>Nama / Judul Fitur</TableHeaderCell>
+              <TableHeaderCell>Deskripsi Detail</TableHeaderCell>
               <TableHeaderCell>Status (Klik Ubah)</TableHeaderCell>
               <TableHeaderCell className="text-right">Aksi</TableHeaderCell>
             </TableRow>
@@ -165,23 +162,21 @@ export default function FAQsCMSPage() {
           <TableBody>
             {loading ? (
               <TableSkeleton columns={5} />
-            ) : faqs.length === 0 ? (
+            ) : features.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-sm text-gray-500">
-                  Belum ada FAQ.
+                  Belum ada data fitur unggulan.
                 </TableCell>
               </TableRow>
             ) : (
-              faqs.map((f) => (
+              features.map((f, idx) => (
                 <TableRow key={f.id}>
-                  <TableCell>
-                    <Badge variant="neutral">{f.category}</Badge>
+                  <TableCell className="text-xs text-gray-400 font-mono">#{idx + 1}</TableCell>
+                  <TableCell className="font-semibold text-gray-900 dark:text-gray-50">
+                    {f.title}
                   </TableCell>
-                  <TableCell className="font-semibold text-gray-900 dark:text-gray-50 max-w-xs truncate">
-                    {f.question}
-                  </TableCell>
-                  <TableCell className="text-xs text-gray-500 max-w-md truncate">
-                    {f.answer}
+                  <TableCell className="text-xs text-gray-500 max-w-md">
+                    {f.description}
                   </TableCell>
                   <TableCell>
                     <button
@@ -209,21 +204,31 @@ export default function FAQsCMSPage() {
         </Table>
       </Card>
 
-      {/* Modal Form Dialog */}
+      {/* Dialog Modal */}
       <Dialog open={openModal} onOpenChange={setOpenModal}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Edit FAQ" : "Tambah FAQ Baru"}
+              {editingItem ? "Edit Fitur Unggulan" : "Tambah Fitur Baru"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Kategori FAQ</Label>
+              <Label>Nama / Judul Fitur (Feature Title)</Label>
               <Input
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                placeholder="Umum / Layanan / Manfaat / Paket"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Menemukan Potensi Sejak Dini"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Deskripsi Fitur</Label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Bukan sekadar anak pintar, tapi tahu pintar di bidang apa..."
                 required
               />
             </div>
@@ -240,32 +245,11 @@ export default function FAQsCMSPage() {
               </select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Pertanyaan (Question)</Label>
-              <Input
-                value={form.question}
-                onChange={(e) => setForm({ ...form, question: e.target.value })}
-                placeholder="Apa itu JariBakat?"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Jawaban (Answer)</Label>
-              <Textarea
-                value={form.answer}
-                onChange={(e) => setForm({ ...form, answer: e.target.value })}
-                placeholder="JariBakat adalah Platform..."
-                rows={4}
-                required
-              />
-            </div>
-
             <DialogFooter className="mt-6">
               <Button type="button" variant="secondary" onClick={() => setOpenModal(false)}>
                 Batal
               </Button>
-              <Button type="submit">Simpan FAQ</Button>
+              <Button type="submit">Simpan Fitur</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -275,9 +259,9 @@ export default function FAQsCMSPage() {
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Hapus Pertanyaan FAQ?"
-        description="Apakah Anda yakin ingin menghapus pertanyaan FAQ ini?"
-        confirmText="Hapus FAQ"
+        title="Hapus Fitur Unggulan?"
+        description="Apakah Anda yakin ingin menghapus fitur unggulan ini?"
+        confirmText="Hapus Fitur"
         loading={deleting}
         onConfirm={executeDelete}
       />

@@ -12,6 +12,8 @@ export const siteConfig = {
     faqs: "/faqs",
     communities: "/communities",
     usps: "/usps",
+    features: "/features",
+    users: "/users",
     footer: "/footer",
     pages: "/pages",
     siteSettings: "/site-settings",

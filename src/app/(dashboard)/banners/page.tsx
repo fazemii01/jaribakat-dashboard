@@ -7,7 +7,9 @@ import { Button } from "@/components/Button"
 import { Badge } from "@/components/Badge"
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/Table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/Dialog"
-import { Plus, Edit, Trash2, Upload, MoveUp, MoveDown } from "lucide-react"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { TableSkeleton } from "@/components/TableSkeleton"
+import { Plus, Edit, Trash2, Upload } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { fetchApi, uploadFileApi } from "@/lib/api"
 
@@ -29,6 +31,11 @@ export default function BannersCMSPage() {
   const [openModal, setOpenModal] = useState(false)
   const [editingBanner, setEditingBanner] = useState<BannerItem | null>(null)
   const [uploading, setUploading] = useState(false)
+
+  // Confirm delete modal states
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const [form, setForm] = useState({
     desktopImage: "",
@@ -86,6 +93,18 @@ export default function BannersCMSPage() {
     setOpenModal(true)
   }
 
+  const handleToggleStatus = async (banner: BannerItem) => {
+    try {
+      await fetchApi(`/banners/${banner.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...banner, isActive: !banner.isActive }),
+      })
+      loadBanners()
+    } catch (err) {
+      console.error("Toggle status error:", err)
+    }
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "desktopImage" | "mobileImage") => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -94,7 +113,7 @@ export default function BannersCMSPage() {
       const res = await uploadFileApi(file)
       setForm((prev) => ({ ...prev, [field]: res.url }))
     } catch (err: any) {
-      alert(`Upload gagal: ${err.message}`)
+      console.error("Upload error:", err)
     } finally {
       setUploading(false)
     }
@@ -117,17 +136,27 @@ export default function BannersCMSPage() {
       setOpenModal(false)
       loadBanners()
     } catch (err: any) {
-      alert(`Gagal menyimpan: ${err.message}`)
+      console.error("Submit error:", err)
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Hapus banner slide ini?")) return
+  const promptDelete = (id: string) => {
+    setDeleteId(id)
+    setConfirmOpen(true)
+  }
+
+  const executeDelete = async () => {
+    if (!deleteId) return
+    setDeleting(true)
     try {
-      await fetchApi(`/banners/${id}`, { method: "DELETE" })
-      loadBanners()
+      await fetchApi(`/banners/${deleteId}`, { method: "DELETE" })
+      await loadBanners()
     } catch (err: any) {
-      alert(`Gagal menghapus: ${err.message}`)
+      console.error("Delete error:", err)
+    } finally {
+      setDeleting(false)
+      setConfirmOpen(false)
+      setDeleteId(null)
     }
   }
 
@@ -142,7 +171,7 @@ export default function BannersCMSPage() {
             Gambar slide promo banner utama di halaman beranda
           </p>
         </div>
-        <Button onClick={handleOpenCreate} className="gap-2 w-full sm:w-auto justify-center">
+        <Button onClick={handleOpenCreate} className="gap-2 w-full sm:w-auto justify-center cursor-pointer">
           <Plus className="size-4" />
           <span>Tambah Banner</span>
         </Button>
@@ -156,17 +185,13 @@ export default function BannersCMSPage() {
               <TableHeaderCell>Alt Text</TableHeaderCell>
               <TableHeaderCell>CTA Button</TableHeaderCell>
               <TableHeaderCell>Link Href</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell>Status (Klik Ubah)</TableHeaderCell>
               <TableHeaderCell className="text-right">Aksi</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-sm text-gray-500">
-                  Memuat data banner...
-                </TableCell>
-              </TableRow>
+              <TableSkeleton columns={6} />
             ) : banners.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-sm text-gray-500">
@@ -191,15 +216,21 @@ export default function BannersCMSPage() {
                     {b.ctaHref}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={b.isActive ? "success" : "warning"}>
-                      {b.isActive ? "Aktif" : "Non-Aktif"}
-                    </Badge>
+                    <button
+                      onClick={() => handleToggleStatus(b)}
+                      title="Klik untuk mengubah status"
+                      className="cursor-pointer focus:outline-none"
+                    >
+                      <Badge variant={b.isActive ? "success" : "warning"}>
+                        {b.isActive ? "Aktif" : "Non-Aktif"}
+                      </Badge>
+                    </button>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="secondary" className="p-1.5" onClick={() => handleOpenEdit(b)}>
+                    <Button variant="secondary" className="p-1.5 cursor-pointer" onClick={() => handleOpenEdit(b)}>
                       <Edit className="size-4 text-gray-600" />
                     </Button>
-                    <Button variant="secondary" className="p-1.5" onClick={() => handleDelete(b.id)}>
+                    <Button variant="secondary" className="p-1.5 cursor-pointer" onClick={() => promptDelete(b.id)}>
                       <Trash2 className="size-4 text-red-500" />
                     </Button>
                   </TableCell>
@@ -280,13 +311,27 @@ export default function BannersCMSPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>CTA Link Href</Label>
-              <Input
-                value={form.ctaHref}
-                onChange={(e) => setForm({ ...form, ctaHref: e.target.value })}
-                placeholder="/event"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>CTA Link Href</Label>
+                <Input
+                  value={form.ctaHref}
+                  onChange={(e) => setForm({ ...form, ctaHref: e.target.value })}
+                  placeholder="/event"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Status Publikasi</Label>
+                <select
+                  value={form.isActive ? "true" : "false"}
+                  onChange={(e) => setForm({ ...form, isActive: e.target.value === "true" })}
+                  className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="true">Aktif (Tampil)</option>
+                  <option value="false">Non-Aktif (Disembunyikan)</option>
+                </select>
+              </div>
             </div>
 
             <DialogFooter className="mt-6">
@@ -298,6 +343,17 @@ export default function BannersCMSPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog Component */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Hapus Banner Slide?"
+        description="Apakah Anda yakin ingin menghapus banner ini dari Hero Carousel beranda?"
+        confirmText="Hapus Banner"
+        loading={deleting}
+        onConfirm={executeDelete}
+      />
     </div>
   )
 }

@@ -47,7 +47,20 @@ export async function fetchApi<T = any>(
     throw new Error(errorData.message || `API Error: ${response.statusText}`);
   }
 
-  return response.json();
+  if (response.status === 204) {
+    return {} as T;
+  }
+
+  const text = await response.text();
+  if (!text || !text.trim()) {
+    return {} as T;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch (err) {
+    return {} as T;
+  }
 }
 
 export async function uploadFileApi(file: File): Promise<{ url: string; filename: string }> {

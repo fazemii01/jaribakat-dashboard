@@ -7,6 +7,8 @@ import { Button } from "@/components/Button"
 import { Badge } from "@/components/Badge"
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/Table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/Dialog"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { TableSkeleton } from "@/components/TableSkeleton"
 import { Plus, Edit, Trash2, Upload } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { fetchApi, uploadFileApi } from "@/lib/api"
@@ -29,6 +31,11 @@ export default function TopicsCMSPage() {
   const [openModal, setOpenModal] = useState(false)
   const [editingItem, setEditingItem] = useState<TopicItem | null>(null)
   const [uploading, setUploading] = useState(false)
+
+  // Confirm delete modal states
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const [form, setForm] = useState({
     slug: "",
@@ -86,6 +93,18 @@ export default function TopicsCMSPage() {
     setOpenModal(true)
   }
 
+  const handleToggleStatus = async (top: TopicItem) => {
+    try {
+      await fetchApi(`/topics/${top.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...top, isActive: !top.isActive }),
+      })
+      loadTopics()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -94,7 +113,7 @@ export default function TopicsCMSPage() {
       const res = await uploadFileApi(file)
       setForm((prev) => ({ ...prev, icon: res.url }))
     } catch (err: any) {
-      alert(`Upload gagal: ${err.message}`)
+      console.error(err)
     } finally {
       setUploading(false)
     }
@@ -117,17 +136,27 @@ export default function TopicsCMSPage() {
       setOpenModal(false)
       loadTopics()
     } catch (err: any) {
-      alert(`Gagal menyimpan: ${err.message}`)
+      console.error(err)
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Hapus topik ini?")) return
+  const promptDelete = (id: string) => {
+    setDeleteId(id)
+    setConfirmOpen(true)
+  }
+
+  const executeDelete = async () => {
+    if (!deleteId) return
+    setDeleting(true)
     try {
-      await fetchApi(`/topics/${id}`, { method: "DELETE" })
-      loadTopics()
+      await fetchApi(`/topics/${deleteId}`, { method: "DELETE" })
+      await loadTopics()
     } catch (err: any) {
-      alert(`Gagal menghapus: ${err.message}`)
+      console.error(err)
+    } finally {
+      setDeleting(false)
+      setConfirmOpen(false)
+      setDeleteId(null)
     }
   }
 
@@ -136,13 +165,13 @@ export default function TopicsCMSPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-50">
-            Kelola Topik & Kategori
+            Kelola Topik &amp; Kategori
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             Topik tag yang tampil di mega menu Navbar dan homepage section
           </p>
         </div>
-        <Button onClick={handleOpenCreate} className="gap-2 w-full sm:w-auto justify-center">
+        <Button onClick={handleOpenCreate} className="gap-2 w-full sm:w-auto justify-center cursor-pointer">
           <Plus className="size-4" />
           <span>Tambah Topik</span>
         </Button>
@@ -157,17 +186,13 @@ export default function TopicsCMSPage() {
               <TableHeaderCell>Slug</TableHeaderCell>
               <TableHeaderCell>Tampil di Nav</TableHeaderCell>
               <TableHeaderCell>Tampil di Home</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell>Status (Klik Ubah)</TableHeaderCell>
               <TableHeaderCell className="text-right">Aksi</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-sm text-gray-500">
-                  Memuat data topik...
-                </TableCell>
-              </TableRow>
+              <TableSkeleton columns={7} />
             ) : topics.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-sm text-gray-500">
@@ -199,15 +224,21 @@ export default function TopicsCMSPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={t.isActive ? "success" : "warning"}>
-                      {t.isActive ? "Aktif" : "Non-Aktif"}
-                    </Badge>
+                    <button
+                      onClick={() => handleToggleStatus(t)}
+                      title="Klik untuk mengubah status"
+                      className="cursor-pointer focus:outline-none"
+                    >
+                      <Badge variant={t.isActive ? "success" : "warning"}>
+                        {t.isActive ? "Aktif" : "Non-Aktif"}
+                      </Badge>
+                    </button>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="secondary" className="p-1.5" onClick={() => handleOpenEdit(t)}>
+                    <Button variant="secondary" className="p-1.5 cursor-pointer" onClick={() => handleOpenEdit(t)}>
                       <Edit className="size-4 text-gray-600" />
                     </Button>
-                    <Button variant="secondary" className="p-1.5" onClick={() => handleDelete(t.id)}>
+                    <Button variant="secondary" className="p-1.5 cursor-pointer" onClick={() => promptDelete(t.id)}>
                       <Trash2 className="size-4 text-red-500" />
                     </Button>
                   </TableCell>
@@ -248,6 +279,18 @@ export default function TopicsCMSPage() {
             </div>
 
             <div className="space-y-2">
+              <Label>Status Publikasi</Label>
+              <select
+                value={form.isActive ? "true" : "false"}
+                onChange={(e) => setForm({ ...form, isActive: e.target.value === "true" })}
+                className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="true">Aktif (Tampil)</option>
+                <option value="false">Non-Aktif (Disembunyikan)</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
               <Label>URL Icon (SVG/PNG)</Label>
               <div className="flex gap-2">
                 <Input
@@ -270,7 +313,7 @@ export default function TopicsCMSPage() {
                   type="checkbox"
                   checked={form.showInNav}
                   onChange={(e) => setForm({ ...form, showInNav: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                 />
                 <span>Tampil di Navbar</span>
               </label>
@@ -280,7 +323,7 @@ export default function TopicsCMSPage() {
                   type="checkbox"
                   checked={form.showOnHome}
                   onChange={(e) => setForm({ ...form, showOnHome: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                 />
                 <span>Tampil di Homepage</span>
               </label>
@@ -295,6 +338,17 @@ export default function TopicsCMSPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog Component */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Hapus Topik Kategori?"
+        description="Apakah Anda yakin ingin menghapus topik ini dari kategori utama?"
+        confirmText="Hapus Topik"
+        loading={deleting}
+        onConfirm={executeDelete}
+      />
     </div>
   )
 }

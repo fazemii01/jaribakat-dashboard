@@ -7,6 +7,8 @@ import { Button } from "@/components/Button"
 import { Badge } from "@/components/Badge"
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/Table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/Dialog"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { TableSkeleton } from "@/components/TableSkeleton"
 import { Plus, Edit, Trash2, Upload } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { fetchApi, uploadFileApi } from "@/lib/api"
@@ -37,13 +39,18 @@ export default function EventsCMSPage() {
   const [editingItem, setEditingItem] = useState<EventItem | null>(null)
   const [uploading, setUploading] = useState(false)
 
+  // Confirm delete modal states
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
   const [form, setForm] = useState({
     title: "",
     type: "Tes Bakat Anak",
     category: "online" as "online" | "offline" | "expert",
     speaker: "Tim Konsultan JariBakat",
     speakerRole: "Certified Fingerprint Analyst JariBakat",
-    speakerImage: "https://storage.googleapis.com/insightme-production/file/speaker/thumb/speaker-1.png",
+    speakerImage: "https://storage.alliago.id/jaribakat-new/speakers/speaker-1.png",
     date: "Akses Fleksibel",
     time: "Sesuai Jadwal Pilihan",
     location: "Online / Center JariBakat",
@@ -78,7 +85,7 @@ export default function EventsCMSPage() {
       category: "online",
       speaker: "Tim Konsultan JariBakat",
       speakerRole: "Certified Fingerprint Analyst JariBakat",
-      speakerImage: "https://storage.googleapis.com/insightme-production/file/speaker/thumb/speaker-1.png",
+      speakerImage: "https://storage.alliago.id/jaribakat-new/speakers/speaker-1.png",
       date: "Akses Fleksibel",
       time: "Sesuai Jadwal Pilihan",
       location: "Online / Center JariBakat",
@@ -114,6 +121,18 @@ export default function EventsCMSPage() {
     setOpenModal(true)
   }
 
+  const handleToggleStatus = async (evt: EventItem) => {
+    try {
+      await fetchApi(`/events/${evt.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...evt, isActive: !evt.isActive }),
+      })
+      loadEvents()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "image" | "speakerImage") => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -122,7 +141,7 @@ export default function EventsCMSPage() {
       const res = await uploadFileApi(file)
       setForm((prev) => ({ ...prev, [field]: res.url }))
     } catch (err: any) {
-      alert(`Upload gagal: ${err.message}`)
+      console.error(err)
     } finally {
       setUploading(false)
     }
@@ -145,17 +164,27 @@ export default function EventsCMSPage() {
       setOpenModal(false)
       loadEvents()
     } catch (err: any) {
-      alert(`Gagal menyimpan: ${err.message}`)
+      console.error(err)
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Hapus event / paket ini?")) return
+  const promptDelete = (id: string) => {
+    setDeleteId(id)
+    setConfirmOpen(true)
+  }
+
+  const executeDelete = async () => {
+    if (!deleteId) return
+    setDeleting(true)
     try {
-      await fetchApi(`/events/${id}`, { method: "DELETE" })
-      loadEvents()
+      await fetchApi(`/events/${deleteId}`, { method: "DELETE" })
+      await loadEvents()
     } catch (err: any) {
-      alert(`Gagal menghapus: ${err.message}`)
+      console.error(err)
+    } finally {
+      setDeleting(false)
+      setConfirmOpen(false)
+      setDeleteId(null)
     }
   }
 
@@ -164,13 +193,13 @@ export default function EventsCMSPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-50">
-            Kelola Event & Katalog Paket Bakat
+            Kelola Event &amp; Katalog Paket Bakat
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-            Katalog paket tes bakat yang ditampilkan di halaman Event & Kalender
+            Katalog paket tes bakat yang ditampilkan di halaman Event &amp; Kalender
           </p>
         </div>
-        <Button onClick={handleOpenCreate} className="gap-2 w-full sm:w-auto justify-center">
+        <Button onClick={handleOpenCreate} className="gap-2 w-full sm:w-auto justify-center cursor-pointer">
           <Plus className="size-4" />
           <span>Tambah Event/Paket</span>
         </Button>
@@ -182,21 +211,17 @@ export default function EventsCMSPage() {
             <TableRow>
               <TableHeaderCell>Gambar</TableHeaderCell>
               <TableHeaderCell>Judul Event / Paket</TableHeaderCell>
-              <TableHeaderCell>Kategori & Tipe</TableHeaderCell>
+              <TableHeaderCell>Kategori &amp; Tipe</TableHeaderCell>
               <TableHeaderCell>Pembicara / Analyst</TableHeaderCell>
-              <TableHeaderCell>Jadwal & Lokasi</TableHeaderCell>
+              <TableHeaderCell>Jadwal &amp; Lokasi</TableHeaderCell>
               <TableHeaderCell>Harga</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell>Status (Klik Ubah)</TableHeaderCell>
               <TableHeaderCell className="text-right">Aksi</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-sm text-gray-500">
-                  Memuat data event...
-                </TableCell>
-              </TableRow>
+              <TableSkeleton columns={8} />
             ) : events.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8 text-sm text-gray-500">
@@ -236,15 +261,21 @@ export default function EventsCMSPage() {
                     {evt.originalPrice && <div className="text-[10px] text-gray-400 line-through font-normal">{evt.originalPrice}</div>}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={evt.isActive ? "success" : "warning"}>
-                      {evt.isActive ? "Aktif" : "Non-Aktif"}
-                    </Badge>
+                    <button
+                      onClick={() => handleToggleStatus(evt)}
+                      title="Klik untuk mengubah status"
+                      className="cursor-pointer focus:outline-none"
+                    >
+                      <Badge variant={evt.isActive ? "success" : "warning"}>
+                        {evt.isActive ? "Aktif" : "Non-Aktif"}
+                      </Badge>
+                    </button>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="secondary" className="p-1.5" onClick={() => handleOpenEdit(evt)}>
+                    <Button variant="secondary" className="p-1.5 cursor-pointer" onClick={() => handleOpenEdit(evt)}>
                       <Edit className="size-4 text-gray-600" />
                     </Button>
-                    <Button variant="secondary" className="p-1.5" onClick={() => handleDelete(evt.id)}>
+                    <Button variant="secondary" className="p-1.5 cursor-pointer" onClick={() => promptDelete(evt.id)}>
                       <Trash2 className="size-4 text-red-500" />
                     </Button>
                   </TableCell>
@@ -296,12 +327,15 @@ export default function EventsCMSPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Badge Banner (Opsional)</Label>
-                <Input
-                  value={form.badge}
-                  onChange={(e) => setForm({ ...form, badge: e.target.value })}
-                  placeholder="Terpopuler / Rekomendasi Karir"
-                />
+                <Label>Status Publikasi</Label>
+                <select
+                  value={form.isActive ? "true" : "false"}
+                  onChange={(e) => setForm({ ...form, isActive: e.target.value === "true" })}
+                  className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="true">Aktif (Tampil)</option>
+                  <option value="false">Non-Aktif (Disembunyikan)</option>
+                </select>
               </div>
             </div>
 
@@ -421,6 +455,17 @@ export default function EventsCMSPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog Component */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Hapus Event / Paket Bakat?"
+        description="Apakah Anda yakin ingin menghapus event ini? Data yang terhapus tidak dapat dikembalikan."
+        confirmText="Hapus Event"
+        loading={deleting}
+        onConfirm={executeDelete}
+      />
     </div>
   )
 }

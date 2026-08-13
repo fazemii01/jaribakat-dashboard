@@ -7,6 +7,7 @@ import { Button } from "@/components/Button"
 import { Badge } from "@/components/Badge"
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/Table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/Dialog"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { Plus, Edit, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { fetchApi } from "@/lib/api"
@@ -42,6 +43,11 @@ export default function FooterCMSPage() {
     external: false,
     sortOrder: 0,
   })
+
+  // Confirm delete modal states
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ type: "section" | "link"; id: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const loadFooter = async () => {
     try {
@@ -88,18 +94,13 @@ export default function FooterCMSPage() {
       setOpenSectionModal(false)
       loadFooter()
     } catch (err: any) {
-      alert(`Gagal menyimpan seksi footer: ${err.message}`)
+      console.error(err)
     }
   }
 
-  const handleDeleteSection = async (id: string) => {
-    if (!confirm("Hapus seksi footer ini beserta seluruh link di dalamnya?")) return
-    try {
-      await fetchApi(`/footer/sections/${id}`, { method: "DELETE" })
-      loadFooter()
-    } catch (err: any) {
-      alert(`Gagal menghapus seksi: ${err.message}`)
-    }
+  const promptDeleteSection = (id: string) => {
+    setDeleteTarget({ type: "section", id })
+    setConfirmOpen(true)
   }
 
   // Link handlers
@@ -135,17 +136,31 @@ export default function FooterCMSPage() {
       setOpenLinkModal(false)
       loadFooter()
     } catch (err: any) {
-      alert(`Gagal menyimpan link footer: ${err.message}`)
+      console.error(err)
     }
   }
 
-  const handleDeleteLink = async (id: string) => {
-    if (!confirm("Hapus link ini?")) return
+  const promptDeleteLink = (id: string) => {
+    setDeleteTarget({ type: "link", id })
+    setConfirmOpen(true)
+  }
+
+  const executeDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await fetchApi(`/footer/links/${id}`, { method: "DELETE" })
-      loadFooter()
+      if (deleteTarget.type === "section") {
+        await fetchApi(`/footer/sections/${deleteTarget.id}`, { method: "DELETE" })
+      } else {
+        await fetchApi(`/footer/links/${deleteTarget.id}`, { method: "DELETE" })
+      }
+      await loadFooter()
     } catch (err: any) {
-      alert(`Gagal menghapus link: ${err.message}`)
+      console.error(err)
+    } finally {
+      setDeleting(false)
+      setConfirmOpen(false)
+      setDeleteTarget(null)
     }
   }
 
@@ -154,13 +169,13 @@ export default function FooterCMSPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-50">
-            Kelola Footer Links & Seksi
+            Kelola Footer Links &amp; Seksi
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             Atur kolom footer, menu tautan, dan link eksternal landing page
           </p>
         </div>
-        <Button onClick={handleOpenCreateSection} className="gap-2 w-full sm:w-auto justify-center">
+        <Button onClick={handleOpenCreateSection} className="gap-2 w-full sm:w-auto justify-center cursor-pointer">
           <Plus className="size-4" />
           <span>Tambah Kolom Footer</span>
         </Button>
@@ -179,10 +194,10 @@ export default function FooterCMSPage() {
                   {sec.title}
                 </h3>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" className="p-1" onClick={() => handleOpenEditSection(sec)}>
+                  <Button variant="ghost" className="p-1 cursor-pointer" onClick={() => handleOpenEditSection(sec)}>
                     <Edit className="size-4 text-gray-600" />
                   </Button>
-                  <Button variant="ghost" className="p-1" onClick={() => handleDeleteSection(sec.id)}>
+                  <Button variant="ghost" className="p-1 cursor-pointer" onClick={() => promptDeleteSection(sec.id)}>
                     <Trash2 className="size-4 text-red-500" />
                   </Button>
                 </div>
@@ -208,10 +223,10 @@ export default function FooterCMSPage() {
                             {lnk.href}
                           </TableCell>
                           <TableCell className="text-right space-x-1">
-                            <Button variant="secondary" className="p-1 text-xs" onClick={() => handleOpenEditLink(sec.id, lnk)}>
+                            <Button variant="secondary" className="p-1 text-xs cursor-pointer" onClick={() => handleOpenEditLink(sec.id, lnk)}>
                               <Edit className="size-3 text-gray-600" />
                             </Button>
-                            <Button variant="secondary" className="p-1 text-xs" onClick={() => handleDeleteLink(lnk.id)}>
+                            <Button variant="secondary" className="p-1 text-xs cursor-pointer" onClick={() => promptDeleteLink(lnk.id)}>
                               <Trash2 className="size-3 text-red-500" />
                             </Button>
                           </TableCell>
@@ -227,7 +242,7 @@ export default function FooterCMSPage() {
                   </TableBody>
                 </Table>
 
-                <Button variant="secondary" className="w-full text-xs gap-1 mt-2" onClick={() => handleOpenCreateLink(sec.id)}>
+                <Button variant="secondary" className="w-full text-xs gap-1 mt-2 cursor-pointer" onClick={() => handleOpenCreateLink(sec.id)}>
                   <Plus className="size-3" />
                   <span>Tambah Link Ke Kolom Ini</span>
                 </Button>
@@ -294,7 +309,7 @@ export default function FooterCMSPage() {
                 id="ext"
                 checked={linkForm.external}
                 onChange={(e) => setLinkForm({ ...linkForm, external: e.target.checked })}
-                className="rounded border-gray-300"
+                className="rounded border-gray-300 cursor-pointer"
               />
               <Label htmlFor="ext" className="text-xs cursor-pointer">Buka di Tab Baru (External Link)</Label>
             </div>
@@ -307,6 +322,21 @@ export default function FooterCMSPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog Component */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={deleteTarget?.type === "section" ? "Hapus Kolom Footer?" : "Hapus Link Footer?"}
+        description={
+          deleteTarget?.type === "section"
+            ? "Apakah Anda yakin ingin menghapus kolom footer ini beserta seluruh link di dalamnya?"
+            : "Apakah Anda yakin ingin menghapus tautan link ini dari footer?"
+        }
+        confirmText="Hapus"
+        loading={deleting}
+        onConfirm={executeDelete}
+      />
     </div>
   )
 }

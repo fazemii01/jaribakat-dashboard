@@ -8,6 +8,8 @@ import { Badge } from "@/components/Badge"
 import { Textarea } from "@/components/Textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/Table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/Dialog"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
+import { TableSkeleton } from "@/components/TableSkeleton"
 import { Plus, Edit, Trash2, Upload } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { fetchApi, uploadFileApi } from "@/lib/api"
@@ -20,6 +22,7 @@ interface ProgramItem {
   image: string
   href: string
   category: "online" | "offline" | "expert"
+  subCategory?: string
   speaker: string
   speakerRole: string
   speakerImage?: string
@@ -41,6 +44,11 @@ export default function ProgramsCMSPage() {
   const [editingItem, setEditingItem] = useState<ProgramItem | null>(null)
   const [uploading, setUploading] = useState(false)
 
+  // Confirm delete modal states
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
   const [form, setForm] = useState({
     slug: "",
     title: "",
@@ -48,6 +56,7 @@ export default function ProgramsCMSPage() {
     image: "",
     href: "https://wa.me/6285196235285",
     category: "online" as "online" | "offline" | "expert",
+    subCategory: "Webinar & Workshop",
     speaker: "Tim Konsultan JariBakat",
     speakerRole: "Certified Fingerprint Analyst JariBakat",
     speakerImage: "",
@@ -80,13 +89,17 @@ export default function ProgramsCMSPage() {
 
   const handleOpenCreate = () => {
     setEditingItem(null)
+    const cat = activeTab === "all" ? "online" : activeTab
+    const defaultSubCat = cat === "online" ? "Webinar & Workshop" : cat === "offline" ? "Offline Gathering" : "Pelatihan Profesional"
+
     setForm({
       slug: `program-${Date.now()}`,
       title: "",
       description: "",
       image: "",
       href: "https://wa.me/6285196235285",
-      category: activeTab === "all" ? "online" : activeTab,
+      category: cat,
+      subCategory: defaultSubCat,
       speaker: "Tim Konsultan JariBakat",
       speakerRole: "Certified Fingerprint Analyst JariBakat",
       speakerImage: "",
@@ -111,6 +124,7 @@ export default function ProgramsCMSPage() {
       image: prog.image,
       href: prog.href,
       category: prog.category,
+      subCategory: prog.subCategory || "Webinar & Workshop",
       speaker: prog.speaker || "Tim Konsultan JariBakat",
       speakerRole: prog.speakerRole || "Certified Fingerprint Analyst JariBakat",
       speakerImage: prog.speakerImage || "",
@@ -126,6 +140,18 @@ export default function ProgramsCMSPage() {
     setOpenModal(true)
   }
 
+  const handleToggleStatus = async (prog: ProgramItem) => {
+    try {
+      await fetchApi(`/programs/${prog.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...prog, isActive: !prog.isActive }),
+      })
+      loadPrograms()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldKey: "image" | "speakerImage") => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -134,7 +160,7 @@ export default function ProgramsCMSPage() {
       const res = await uploadFileApi(file)
       setForm((prev) => ({ ...prev, [fieldKey]: res.url }))
     } catch (err: any) {
-      alert(`Upload gagal: ${err.message}`)
+      console.error(err)
     } finally {
       setUploading(false)
     }
@@ -157,17 +183,27 @@ export default function ProgramsCMSPage() {
       setOpenModal(false)
       loadPrograms()
     } catch (err: any) {
-      alert(`Gagal menyimpan: ${err.message}`)
+      console.error(err)
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Hapus program ini?")) return
+  const promptDelete = (id: string) => {
+    setDeleteId(id)
+    setConfirmOpen(true)
+  }
+
+  const executeDelete = async () => {
+    if (!deleteId) return
+    setDeleting(true)
     try {
-      await fetchApi(`/programs/${id}`, { method: "DELETE" })
-      loadPrograms()
+      await fetchApi(`/programs/${deleteId}`, { method: "DELETE" })
+      await loadPrograms()
     } catch (err: any) {
-      alert(`Gagal menghapus: ${err.message}`)
+      console.error(err)
+    } finally {
+      setDeleting(false)
+      setConfirmOpen(false)
+      setDeleteId(null)
     }
   }
 
@@ -179,10 +215,10 @@ export default function ProgramsCMSPage() {
             Kelola Program Layanan
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-            Online Programs, Offline Roadshows, & Expert Class Consultations
+            Online Programs, Offline Roadshows, &amp; Expert Class Consultations
           </p>
         </div>
-        <Button onClick={handleOpenCreate} className="gap-2 w-full sm:w-auto justify-center">
+        <Button onClick={handleOpenCreate} className="gap-2 w-full sm:w-auto justify-center cursor-pointer">
           <Plus className="size-4" />
           <span>Tambah Program</span>
         </Button>
@@ -194,9 +230,9 @@ export default function ProgramsCMSPage() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-colors whitespace-nowrap ${
+            className={`px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === tab
-                ? "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400"
+                ? "bg-blue-50 text-[#1E1B4B] dark:bg-blue-950/50 dark:text-blue-400"
                 : "text-gray-600 hover:bg-gray-100 dark:text-gray-400"
             }`}
           >
@@ -210,24 +246,21 @@ export default function ProgramsCMSPage() {
           <TableHead>
             <TableRow>
               <TableHeaderCell>Gambar</TableHeaderCell>
-              <TableHeaderCell>Judul & Badge</TableHeaderCell>
+              <TableHeaderCell>Judul &amp; Badge</TableHeaderCell>
+              <TableHeaderCell>Grup / Sub-Kategori Navbar</TableHeaderCell>
               <TableHeaderCell>Analyst / Speaker</TableHeaderCell>
-              <TableHeaderCell>Jadwal & Lokasi</TableHeaderCell>
+              <TableHeaderCell>Jadwal &amp; Lokasi</TableHeaderCell>
               <TableHeaderCell>Harga</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell>Status (Klik Ubah)</TableHeaderCell>
               <TableHeaderCell className="text-right">Aksi</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-sm text-gray-500">
-                  Memuat data program...
-                </TableCell>
-              </TableRow>
+              <TableSkeleton columns={8} />
             ) : filteredPrograms.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-sm text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-sm text-gray-500">
                   Tidak ada program ditemukan.
                 </TableCell>
               </TableRow>
@@ -248,6 +281,11 @@ export default function ProgramsCMSPage() {
                       {p.badge && <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">{p.badge}</span>}
                     </div>
                   </TableCell>
+                  <TableCell>
+                    <Badge variant="neutral" className="bg-indigo-50 text-[#1E1B4B] font-bold">
+                      {p.subCategory || "Webinar & Workshop"}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-xs">
                     <div className="font-medium text-gray-900 dark:text-gray-100">{p.speaker || "Tim Konsultan JariBakat"}</div>
                     <div className="text-gray-400">{p.speakerRole}</div>
@@ -261,15 +299,21 @@ export default function ProgramsCMSPage() {
                     {p.originalPrice && <div className="text-xs text-gray-400 line-through">{p.originalPrice}</div>}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={p.isActive ? "success" : "warning"}>
-                      {p.isActive ? "Aktif" : "Non-Aktif"}
-                    </Badge>
+                    <button
+                      onClick={() => handleToggleStatus(p)}
+                      title="Klik untuk mengubah status"
+                      className="cursor-pointer focus:outline-none"
+                    >
+                      <Badge variant={p.isActive ? "success" : "warning"}>
+                        {p.isActive ? "Aktif" : "Non-Aktif"}
+                      </Badge>
+                    </button>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="secondary" className="p-1.5" onClick={() => handleOpenEdit(p)}>
+                    <Button variant="secondary" className="p-1.5 cursor-pointer" onClick={() => handleOpenEdit(p)}>
                       <Edit className="size-4 text-gray-600" />
                     </Button>
-                    <Button variant="secondary" className="p-1.5" onClick={() => handleDelete(p.id)}>
+                    <Button variant="secondary" className="p-1.5 cursor-pointer" onClick={() => promptDelete(p.id)}>
                       <Trash2 className="size-4 text-red-500" />
                     </Button>
                   </TableCell>
@@ -295,7 +339,30 @@ export default function ProgramsCMSPage() {
                 <Input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="Paket Anak (Basic) – Analisa Potensi & Gaya Belajar"
+                  placeholder="Paket Anak (Basic) – Analisa Potensi &amp; Gaya Belajar"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Kategori Utama Mega Menu</Label>
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value as any })}
+                  className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="online">Online Program</option>
+                  <option value="offline">Offline Program</option>
+                  <option value="expert">Expert Class</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Sub-Kategori / Group Navbar Header</Label>
+                <Input
+                  value={form.subCategory}
+                  onChange={(e) => setForm({ ...form, subCategory: e.target.value })}
+                  placeholder="Contoh: Webinar & Workshop, Belajar Mandiri, dll."
                   required
                 />
               </div>
@@ -309,18 +376,6 @@ export default function ProgramsCMSPage() {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value as any })}
-                  className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="online">Online Program</option>
-                  <option value="offline">Offline Roadshow</option>
-                  <option value="expert">Expert Consultation</option>
-                </select>
-              </div>
 
               <div className="space-y-2">
                 <Label>Badge Label (Opsional)</Label>
@@ -329,6 +384,18 @@ export default function ProgramsCMSPage() {
                   onChange={(e) => setForm({ ...form, badge: e.target.value })}
                   placeholder="Terpopuler / Best Value"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Status Publikasi</Label>
+                <select
+                  value={form.isActive ? "true" : "false"}
+                  onChange={(e) => setForm({ ...form, isActive: e.target.value === "true" })}
+                  className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="true">Aktif (Tampil di Landing Page)</option>
+                  <option value="false">Non-Aktif (Disembunyikan)</option>
+                </select>
               </div>
 
               <div className="space-y-2">
@@ -405,7 +472,7 @@ export default function ProgramsCMSPage() {
                 <Textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Analisa bakat & potensi dasar anak..."
+                  placeholder="Analisa bakat &amp; potensi dasar anak..."
                   required
                 />
               </div>
@@ -446,6 +513,17 @@ export default function ProgramsCMSPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog Component */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Hapus Program Layanan?"
+        description="Apakah Anda yakin ingin menghapus program ini? Data yang terhapus tidak dapat dikembalikan."
+        confirmText="Hapus Program"
+        loading={deleting}
+        onConfirm={executeDelete}
+      />
     </div>
   )
 }
