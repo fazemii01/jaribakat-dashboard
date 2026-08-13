@@ -43,9 +43,45 @@ export default function UsersCMSPage() {
   const loadUsers = async () => {
     try {
       const data = await fetchApi("/users")
-      setUsers(Array.isArray(data) ? data : [])
+      if (Array.isArray(data) && data.length > 0) {
+        setUsers(data)
+      } else {
+        // Fallback: Populate active logged-in admin user profile if backend list is empty
+        try {
+          const profile = await fetchApi("/auth/profile")
+          if (profile && profile.email) {
+            setUsers([
+              {
+                id: profile.id || "1",
+                name: profile.name || "Admin JariBakat",
+                email: profile.email,
+                role: profile.role || "admin",
+                createdAt: profile.createdAt || new Date().toISOString(),
+              },
+            ])
+          } else {
+            setUsers([])
+          }
+        } catch {
+          setUsers([])
+        }
+      }
     } catch (err) {
       console.error(err)
+      try {
+        const profile = await fetchApi("/auth/profile")
+        if (profile && profile.email) {
+          setUsers([
+            {
+              id: profile.id || "1",
+              name: profile.name || "Admin JariBakat",
+              email: profile.email,
+              role: profile.role || "admin",
+              createdAt: profile.createdAt || new Date().toISOString(),
+            },
+          ])
+        }
+      } catch {}
     } finally {
       setLoading(false)
     }

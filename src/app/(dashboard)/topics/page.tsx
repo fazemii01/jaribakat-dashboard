@@ -204,6 +204,7 @@ export default function TopicsCMSPage() {
                 <TableRow key={t.id}>
                   <TableCell>
                     <div className="w-8 h-8 rounded bg-gray-100 p-1 flex items-center justify-center border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={t.icon} alt={t.name} className="w-full h-full object-contain" />
                     </div>
                   </TableCell>

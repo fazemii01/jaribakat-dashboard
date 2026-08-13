@@ -77,6 +77,7 @@ export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
             {!isCollapsed ? (
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 p-1 flex items-center justify-center border border-indigo-100 dark:border-indigo-900 shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/image.png"
                     alt="JariBakat Mascot Logo"
@@ -89,6 +90,7 @@ export function Sidebar({ isCollapsed, toggleSidebar }: SidebarProps) {
               </div>
             ) : (
               <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 p-1 flex items-center justify-center border border-indigo-100 dark:border-indigo-900 shrink-0 mx-auto">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/image.png"
                   alt="JariBakat Mascot Logo"

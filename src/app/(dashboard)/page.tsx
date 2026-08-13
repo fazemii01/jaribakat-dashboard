@@ -3,7 +3,7 @@
 import { Card } from "@/components/Card"
 import { Badge } from "@/components/Badge"
 import { Button } from "@/components/Button"
-import { BarChartBig, Image as ImageIcon, Package, Ticket, Tag, Video, HelpCircle, Users, Sparkles, LayoutGrid, FileText, Settings, ArrowRight } from "lucide-react"
+import { Image as ImageIcon, Package, Ticket, Tag, Video, HelpCircle, Users, Sparkles, LayoutGrid, FileText, Settings, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import React, { useEffect, useState } from "react"
 import { fetchApi } from "@/lib/api"
@@ -25,28 +25,28 @@ export default function CMSOverviewPage() {
   useEffect(() => {
     async function loadStats() {
       try {
-        const [banners, programs, events, topics, videos, faqs, communities, usps, footer] = await Promise.all([
-          fetchApi("/banners").catch(() => []),
-          fetchApi("/programs").catch(() => []),
-          fetchApi("/events").catch(() => []),
-          fetchApi("/topics").catch(() => []),
-          fetchApi("/video-courses").catch(() => []),
-          fetchApi("/faqs").catch(() => []),
-          fetchApi("/communities").catch(() => []),
-          fetchApi("/usps").catch(() => []),
-          fetchApi("/footer").catch(() => []),
+        const [b, p, e, t, v, f, c, u, ft] = await Promise.allSettled([
+          fetchApi("/banners"),
+          fetchApi("/programs"),
+          fetchApi("/events"),
+          fetchApi("/topics"),
+          fetchApi("/video-courses"),
+          fetchApi("/faqs"),
+          fetchApi("/communities"),
+          fetchApi("/usps"),
+          fetchApi("/footer"),
         ])
 
         setStats({
-          banners: Array.isArray(banners) ? banners.length : 0,
-          programs: Array.isArray(programs) ? programs.length : 0,
-          events: Array.isArray(events) ? events.length : 0,
-          topics: Array.isArray(topics) ? topics.length : 0,
-          videos: Array.isArray(videos) ? videos.length : 0,
-          faqs: Array.isArray(faqs) ? faqs.length : 0,
-          communities: Array.isArray(communities) ? communities.length : 0,
-          usps: Array.isArray(usps) ? usps.length : 0,
-          footer: Array.isArray(footer) ? footer.length : 0,
+          banners: b.status === "fulfilled" && Array.isArray(b.value) ? b.value.length : 0,
+          programs: p.status === "fulfilled" && Array.isArray(p.value) ? p.value.length : 0,
+          events: e.status === "fulfilled" && Array.isArray(e.value) ? e.value.length : 0,
+          topics: t.status === "fulfilled" && Array.isArray(t.value) ? t.value.length : 0,
+          videos: v.status === "fulfilled" && Array.isArray(v.value) ? v.value.length : 0,
+          faqs: f.status === "fulfilled" && Array.isArray(f.value) ? f.value.length : 0,
+          communities: c.status === "fulfilled" && Array.isArray(c.value) ? c.value.length : 0,
+          usps: u.status === "fulfilled" && Array.isArray(u.value) ? u.value.length : 0,
+          footer: ft.status === "fulfilled" && Array.isArray(ft.value) ? ft.value.length : 0,
         })
       } catch (err) {
         console.error(err)
@@ -67,6 +67,8 @@ export default function CMSOverviewPage() {
     { title: "Komunitas", count: stats.communities, href: "/communities", icon: Users, color: "text-indigo-500", desc: "Link grup WhatsApp komunitas" },
     { title: "Keunggulan (USP)", count: stats.usps, href: "/usps", icon: Sparkles, color: "text-amber-600", desc: "Nilai tambah & keunggulan tes bakat" },
     { title: "Footer Links", count: stats.footer, href: "/footer", icon: LayoutGrid, color: "text-[#1E1B4B]", desc: "Kolom dan menu tautan footer" },
+    { title: "Halaman Statis", count: 2, href: "/pages", icon: FileText, color: "text-teal-600", desc: "Kelola halaman statis about-us & expert" },
+    { title: "Pengaturan Situs", count: 1, href: "/site-settings", icon: Settings, color: "text-slate-600", desc: "Kelola kontak WA, running text & SEO" },
   ]
 
   return (

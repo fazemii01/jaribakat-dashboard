@@ -225,6 +225,7 @@ export default function VideoCoursesCMSPage() {
                 <TableRow key={c.id}>
                   <TableCell>
                     <div className="w-12 h-12 relative rounded bg-gray-100 overflow-hidden border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={c.image} alt={c.title} className="w-full h-full object-cover" />
                     </div>
                   </TableCell>

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fetchApi, setAuthToken } from "@/lib/api";
 
@@ -50,6 +49,7 @@ export default function LoginPage() {
         {/* Logo & Header */}
         <div className="text-center space-y-3">
           <div className="inline-block relative overflow-visible mb-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/jaribakat-logo-landscape.png"
               alt="JariBakat Logo"

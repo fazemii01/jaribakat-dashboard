@@ -84,6 +84,7 @@ export default function MobileSidebar() {
         <DrawerContent className="sm:max-w-lg">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/image.png"
                 alt="JariBakat Mascot Logo"

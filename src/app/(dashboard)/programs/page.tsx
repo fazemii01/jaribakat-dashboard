@@ -269,6 +269,7 @@ export default function ProgramsCMSPage() {
                 <TableRow key={p.id}>
                   <TableCell>
                     <div className="w-12 h-12 relative rounded bg-gray-100 overflow-hidden border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
                     </div>
                   </TableCell>

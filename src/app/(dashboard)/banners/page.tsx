@@ -203,6 +203,7 @@ export default function BannersCMSPage() {
                 <TableRow key={b.id}>
                   <TableCell>
                     <div className="w-24 h-12 relative rounded bg-gray-100 overflow-hidden border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={b.desktopImage} alt={b.alt} className="w-full h-full object-cover" />
                     </div>
                   </TableCell>

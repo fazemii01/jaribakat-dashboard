@@ -8,7 +8,7 @@ export default function NotFound() {
     <div className="flex h-screen flex-col items-center justify-center">
       <Link
         href="/"
-        aria-label="Go to Insights home page"
+        aria-label="Go to JariBakat home page"
       >
         <div className="relative flex items-center justify-center rounded-lg bg-white p-3 shadow-lg ring-1 ring-black/5">
           <Logo
@@ -19,7 +19,7 @@ export default function NotFound() {
       </Link>
       <div className="mt-6 flex flex-col">
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
-          Insights
+          {siteConfig.name}
         </h1>
       </div>
       <p
@@ -29,13 +29,13 @@ export default function NotFound() {
         404
       </p>
       <h2 className="mt-4 text-2xl font-semibold text-gray-900 dark:text-gray-50">
-        Page not found
+        Halaman tidak ditemukan
       </h2>
       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-        Sorry, we could not find the page you are looking for.
+        Maaf, halaman yang Anda cari tidak dapat ditemukan.
       </p>
       <Button asChild className="group mt-8" variant="light">
-        <Link href="/">Go to the home page</Link>
+        <Link href="/">Kembali ke Halaman Utama</Link>
       </Button>
     </div>
   )

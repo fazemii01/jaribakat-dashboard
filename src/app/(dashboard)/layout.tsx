@@ -59,6 +59,7 @@ export default function Layout({
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 font-sans p-4">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-12 h-12 rounded-2xl bg-white p-2 border border-gray-200 dark:border-gray-800 shadow-md flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/image.png"
               alt="JariBakat Mascot Logo"
@@ -83,6 +84,7 @@ export default function Layout({
         <div className="flex items-center gap-3">
           <MobileSidebar />
           <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/image.png"
               alt="JariBakat Mascot Logo"

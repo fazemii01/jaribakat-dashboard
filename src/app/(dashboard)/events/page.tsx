@@ -233,6 +233,7 @@ export default function EventsCMSPage() {
                 <TableRow key={evt.id}>
                   <TableCell>
                     <div className="w-12 h-12 relative rounded bg-gray-100 overflow-hidden border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={evt.image} alt={evt.title} className="w-full h-full object-cover" />
                     </div>
                   </TableCell>

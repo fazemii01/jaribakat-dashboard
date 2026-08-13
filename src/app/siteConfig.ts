@@ -17,7 +17,11 @@ export const siteConfig = {
     footer: "/footer",
     pages: "/pages",
     siteSettings: "/site-settings",
-    settings: "/settings",
+    settings: {
+      audit: "/settings/audit",
+      billing: "/settings/billing",
+      users: "/settings/users",
+    },
     login: "/login",
   },
 };
