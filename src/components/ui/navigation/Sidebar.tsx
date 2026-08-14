@@ -33,6 +33,7 @@ const navigation = [
   { name: "Event & Paket", href: siteConfig.baseLinks.events, icon: Ticket },
   { name: "Topik & Category", href: siteConfig.baseLinks.topics, icon: Tag },
   { name: "Video Courses", href: siteConfig.baseLinks.videoCourses, icon: Video },
+  { name: "Video Testimoni", href: siteConfig.baseLinks.testimonials, icon: Video },
   { name: "FAQ", href: siteConfig.baseLinks.faqs, icon: HelpCircle },
   { name: "Komunitas", href: siteConfig.baseLinks.communities, icon: Users },
   { name: "Fitur & Keunggulan", href: siteConfig.baseLinks.features, icon: Sparkles },

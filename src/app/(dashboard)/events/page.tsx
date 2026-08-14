@@ -28,6 +28,7 @@ interface EventItem {
   price: string
   originalPrice?: string
   badge?: string
+  topic?: string
   href: string
   isActive: boolean
 }
@@ -58,6 +59,7 @@ export default function EventsCMSPage() {
     price: "Rp 350.000",
     originalPrice: "",
     badge: "Terpopuler",
+    topic: "",
     href: "https://wa.me/6285196235285",
     isActive: true,
   })
@@ -93,6 +95,7 @@ export default function EventsCMSPage() {
       price: "Rp 350.000",
       originalPrice: "",
       badge: "Terpopuler",
+      topic: "",
       href: "https://wa.me/6285196235285",
       isActive: true,
     })
@@ -115,6 +118,7 @@ export default function EventsCMSPage() {
       price: evt.price,
       originalPrice: evt.originalPrice || "",
       badge: evt.badge || "",
+      topic: evt.topic || "",
       href: evt.href,
       isActive: evt.isActive,
     })
@@ -436,6 +440,16 @@ export default function EventsCMSPage() {
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, "image")} />
                 </label>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tag Topik (untuk filter di halaman /topic)</Label>
+              <Input
+                value={form.topic || ""}
+                onChange={(e) => setForm({ ...form, topic: e.target.value })}
+                placeholder="emotion / trauma / anxiety (slug topik, opsional)"
+              />
+              <p className="text-[11px] text-gray-400">Isi dengan slug topik (contoh: emotion, trauma, anxiety). Kosongkan jika tidak ingin muncul di filter topik.</p>
             </div>
 
             <div className="space-y-2">
