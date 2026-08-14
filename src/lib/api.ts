@@ -1,6 +1,14 @@
 import Cookies from 'js-cookie';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000/api';
+export function getApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname.includes('jaribakat.com')) {
+    return 'https://backend-web.jaribakat.com/api';
+  }
+  return 'http://localhost:9000/api';
+}
 
 export function getAuthToken(): string | undefined {
   return Cookies.get('cms_token');
@@ -28,7 +36,8 @@ export async function fetchApi<T = any>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+  const apiBase = getApiBaseUrl();
+  const url = endpoint.startsWith('http') ? endpoint : `${apiBase}${endpoint}`;
 
   const response = await fetch(url, {
     ...options,
@@ -73,7 +82,8 @@ export async function uploadFileApi(file: File): Promise<{ url: string; filename
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}/upload`, {
+  const apiBase = getApiBaseUrl();
+  const response = await fetch(`${apiBase}/upload`, {
     method: 'POST',
     headers,
     body: formData,
