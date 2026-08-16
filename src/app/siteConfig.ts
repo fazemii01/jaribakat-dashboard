@@ -7,6 +7,7 @@ export const siteConfig = {
     banners: "/banners",
     programs: "/programs",
     events: "/events",
+    registrations: "/registrations",
     topics: "/topics",
     videoCourses: "/video-courses",
     faqs: "/faqs",

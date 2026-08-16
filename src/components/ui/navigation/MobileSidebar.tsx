@@ -30,6 +30,7 @@ import {
   LayoutGrid,
   FileText,
   Settings,
+  ClipboardList,
   Menu,
   LogOut,
 } from "lucide-react"
@@ -38,6 +39,7 @@ import { usePathname } from "next/navigation"
 
 const navigation = [
   { name: "Overview", href: siteConfig.baseLinks.overview, icon: BarChartBig },
+  { name: "Data Pendaftaran", href: siteConfig.baseLinks.registrations, icon: ClipboardList },
   { name: "Banner Hero", href: siteConfig.baseLinks.banners, icon: ImageIcon },
   { name: "Program Layanan", href: siteConfig.baseLinks.programs, icon: Package },
   { name: "Event & Paket", href: siteConfig.baseLinks.events, icon: Ticket },

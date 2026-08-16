@@ -18,6 +18,7 @@ import {
   LayoutGrid,
   FileText,
   Settings,
+  ClipboardList,
   PanelRightClose,
   PanelRightOpen,
   LogOut,
@@ -28,6 +29,7 @@ import React from "react"
 
 const navigation = [
   { name: "Overview", href: siteConfig.baseLinks.overview, icon: BarChartBig },
+  { name: "Data Pendaftaran", href: siteConfig.baseLinks.registrations, icon: ClipboardList },
   { name: "Banner Hero", href: siteConfig.baseLinks.banners, icon: ImageIcon },
   { name: "Program Layanan", href: siteConfig.baseLinks.programs, icon: Package },
   { name: "Event & Paket", href: siteConfig.baseLinks.events, icon: Ticket },
