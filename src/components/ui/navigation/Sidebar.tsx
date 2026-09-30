@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   LayoutGrid,
   FileText,
+  BookOpen,
   Settings,
   ClipboardList,
   PanelRightClose,
@@ -41,6 +42,7 @@ const navigation = [
   { name: "Fitur & Keunggulan", href: siteConfig.baseLinks.features, icon: Sparkles },
   { name: "Kelola Admin / User", href: siteConfig.baseLinks.users, icon: ShieldCheck },
   { name: "Footer Links", href: siteConfig.baseLinks.footer, icon: LayoutGrid },
+  { name: "Artikel & Edukasi", href: siteConfig.baseLinks.articles, icon: BookOpen },
   { name: "Halaman Statis", href: siteConfig.baseLinks.pages, icon: FileText },
   { name: "Pengaturan Situs", href: siteConfig.baseLinks.siteSettings, icon: Settings },
 ] as const

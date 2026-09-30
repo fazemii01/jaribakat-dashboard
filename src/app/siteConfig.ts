@@ -18,6 +18,7 @@ export const siteConfig = {
     users: "/users",
     footer: "/footer",
     pages: "/pages",
+    articles: "/articles",
     siteSettings: "/site-settings",
     settings: {
       audit: "/settings/audit",
