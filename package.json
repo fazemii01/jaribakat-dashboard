@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start -p 9100",
+    "build": "node ./node_modules/next/dist/bin/next build",
+    "start": "node ./node_modules/next/dist/bin/next start -p 9100",
     "lint": "next lint",
     "generate:transactions": "tsx --tsconfig ./tsconfig.scripts.json ./src/data/generateData.ts"
   },
